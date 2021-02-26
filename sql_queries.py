@@ -7,13 +7,13 @@ config.read('dwh.cfg')
 
 # DROP TABLES
 
-staging_events_table_drop = "DROP TABLE IF EXISTS staging_events"
-staging_songs_table_drop = "DROP TABLE IF EXISTS staging_songs"
-songplay_table_drop = "DROP TABLE IF EXISTS songplay"
-user_table_drop = "DROP TABLE IF EXISTS user"
-song_table_drop = "DROP TABLE IF EXISTS song"
-artist_table_drop = "DROP TABLE IF EXISTS artist"
-time_table_drop = "DROP TABLE IF EXITS time"
+staging_events_table_drop = "DROP TABLE IF EXISTS staging_events";
+staging_songs_table_drop = "DROP TABLE IF EXISTS staging_songs";
+songplay_table_drop = "DROP TABLE IF EXISTS songplay";
+users_table_drop = "DROP TABLE IF EXISTS users";
+song_table_drop = "DROP TABLE IF EXISTS song";
+artist_table_drop = "DROP TABLE IF EXISTS artist";
+time_table_drop = "DROP TABLE IF EXISTS time";
 
 # CREATE TABLES
 
@@ -41,19 +41,19 @@ staging_events_table_create= ("""
 staging_songs_table_create = ("""
     create table if not exists staging_songs (num_songs INTEGER, \
                                               artist_id VARCHAR, \
-                                              artist_latitude FLOAT NOT NULL, \
-                                              artist_longitute FLOAT NOT NULL, \
+                                              artist_latitude FLOAT, \
+                                              artist_longitute FLOAT, \
                                               artist_location VARCHAR, \
                                               artist_name VARCHAR, \
                                               song_id VARCHAR, \
                                               title VARCHAR, \
                                               duration FLOAT, \
-                                              year VARCHAR NOT NULL);
+                                              year INTEGER);
 """)
 
 songplay_table_create = (""" 
-    create table if not exists songplay (songplay_id IDENTITY PRIMARY KEY \
-                                         start_time TIMESTAMP NOTNULL, \
+    create table if not exists songplay (songplay_id BIGINT IDENTITY(0,1) PRIMARY KEY, \
+                                         start_time BIGINT NOT NULL, \
                                          user_id VARCHAR, \
                                          level VARCHAR, \
                                          song_id VARCHAR, \
@@ -63,10 +63,10 @@ songplay_table_create = ("""
                                          user_agent VARCHAR);
  """)
 
-user_table_create = ("""
-    create table if not exists user (user_id VARCHAR PRIMARY KEY, \
+users_table_create = ("""
+    create table if not exists users (user_id VARCHAR PRIMARY KEY, \
                                      first_name VARCHAR, \
-                                     last_name VARCHARr, \
+                                     last_name VARCHAR, \
                                      gender VARCHAR, \
                                      level VARCHAR);
 """)
@@ -80,14 +80,14 @@ song_table_create = ("""
 
 artist_table_create = ("""
     create table if not exists artist (artist_id VARCHAR PRIMARY KEY, \
-                                       name VARCHAR NOT NULL, /
+                                       name VARCHAR NOT NULL, \
                                        location VARCHAR NOT NULL, \
                                        latitude FLOAT NOT NULL, \
                                        longitude FLOAT NOT NULL);
 """)
 
 time_table_create = ("""
-    create table if not exists time (start_time TIMESTAMP primary key, \
+    create table if not exists time (start_time BIGINT PRIMARY KEY, \
                                      hour INTEGER NOT NULL, \
                                      day INTEGER NOT NULL, \
                                      week INTEGER NOT NULL, \
@@ -103,7 +103,8 @@ staging_events_copy = ("""
     credentials 'aws_iam_role={}'
     json '{}' 
     compupdate off
-    region 'us-west-2';
+    region 'us-west-2'
+    timeformat 'epochmillisecs';
 """).format(
     config.get("S3", "LOG_DATA"), 
     config.get("IAM_ROLE", "ARN"), 
@@ -113,12 +114,14 @@ staging_songs_copy = ("""
     copy staging_songs from {}
     credentials 'aws_iam_role={}'
     json 'auto' truncatecolumns
+    BLANKSASNULL
     compupdate off
-    region 'us-west-2';
+    region 'us-west-2'
+    ACCEPTINVCHARS;
 """).format(
-    config.get("S3", "SONG_DATA"), 
-    config.get("IAM_ROLE", "ARN"), 
-    config.get("S3", "LOG_JSONPATH"))
+    config['S3']['SONG_DATA'], 
+    config['IAM_ROLE']['ARN'])
+  
                
 # FINAL TABLES
 
@@ -141,8 +144,8 @@ songplay_table_insert = ("""
     WHERE se.page = 'NextSong';
 """)
     
-user_table_insert = ("""
-    INSERT INTO user (first_name, last_name, gender, level)
+users_table_insert = ("""
+    INSERT INTO users (first_name, last_name, gender, level)
     SELECT DISTINCT
                     se.firstName AS first_name, \
                     se.lastName AS last_name, \
@@ -188,7 +191,7 @@ time_table_insert = ("""
 
 # QUERY LISTS
 
-create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
-drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
+create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, users_table_create, song_table_create, artist_table_create, time_table_create]
+drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, users_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
-insert_table_queries = [songplay_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert]
+insert_table_queries = [songplay_table_insert, users_table_insert, song_table_insert, artist_table_insert, time_table_insert]
