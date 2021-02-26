@@ -13,7 +13,7 @@ songplay_table_drop = "DROP TABLE IF EXISTS songplay"
 user_table_drop = "DROP TABLE IF EXISTS user"
 song_table_drop = "DROP TABLE IF EXISTS song"
 artist_table_drop = "DROP TABLE IF EXISTS artist"
-time_table_drop = "DROP TABLE IF EXITS artist"
+time_table_drop = "DROP TABLE IF EXITS time"
 
 # CREATE TABLES
 
@@ -65,10 +65,10 @@ songplay_table_create = ("""
 
 user_table_create = ("""
     create table if not exists user (user_id VARCHAR PRIMARY KEY, \
-                                     first_name varchar, \
-                                     last_name varchar, \
-                                     gender varchar, \
-                                     level varchar);
+                                     first_name VARCHAR, \
+                                     last_name VARCHARr, \
+                                     gender VARCHAR, \
+                                     level VARCHAR);
 """)
 
 song_table_create = ("""
@@ -103,7 +103,7 @@ staging_events_copy = ("""
     credentials 'aws_iam_role={}'
     json '{}' 
     compupdate off
-    region 'us-west-2c';
+    region 'us-west-2';
 """).format(
     config.get("S3", "LOG_DATA"), 
     config.get("IAM_ROLE", "ARN"), 
@@ -114,7 +114,7 @@ staging_songs_copy = ("""
     credentials 'aws_iam_role={}'
     json 'auto' truncatecolumns
     compupdate off
-    region 'us-west-2c';
+    region 'us-west-2';
 """).format(
     config.get("S3", "SONG_DATA"), 
     config.get("IAM_ROLE", "ARN"), 
