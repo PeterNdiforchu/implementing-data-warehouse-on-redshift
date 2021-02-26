@@ -1,1 +1,1 @@
-# implementing-data-warehouse-on-redshift
+# Implementing-data-warehouse-on-redshift
