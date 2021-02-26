@@ -103,10 +103,10 @@ staging_events_copy = ("""
     credentials 'aws_iam_role={}'
     json '{}' 
     compupdate off
-    region 'us-west-2';
+    region 'us-west-2c';
 """).format(
-    config.get("S3", "LOG_DATA", 
-    config.get("I_AM_ROLE", "ARN", 
+    config.get("S3", "LOG_DATA"), 
+    config.get("IAM_ROLE", "ARN"), 
     config.get("S3", "LOG_JSONPATH"))
 
 staging_songs_copy = ("""
@@ -114,10 +114,10 @@ staging_songs_copy = ("""
     credentials 'aws_iam_role={}'
     json 'auto' truncatecolumns
     compupdate off
-    region 'us-west-2';
+    region 'us-west-2c';
 """).format(
-    config.get("S3", "SONG_DATA", 
-    config.get("I_AM_ROLE", "ARN", 
+    config.get("S3", "SONG_DATA"), 
+    config.get("IAM_ROLE", "ARN"), 
     config.get("S3", "LOG_JSONPATH"))
                
 # FINAL TABLES
@@ -139,7 +139,7 @@ songplay_table_insert = ("""
     JOIN staging_songs ss ON (se.artist = ss.artist_name)
     JOIN staging_songs ss ON (se.length = ss.duration)
     WHERE se.page = 'NextSong';
-"""))
+""")
     
 user_table_insert = ("""
     INSERT INTO user (first_name, last_name, gender, level)
@@ -151,7 +151,7 @@ user_table_insert = ("""
     FROM staging_events se
     WHERE se.page = 'NextSong'
     WHERE userid NOT IN (SELECT DISTINCT userid FROM users);                    
-"""))
+""")
 
 song_table_insert = ("""
     INSERT INTO song (song_id, title, artist_id, year, duration)
@@ -161,7 +161,7 @@ song_table_insert = ("""
         ss.year, \
         ss.duration
     FROM staging_songs ss;   
-"""))
+""")
     
 artist_table_insert = ("""
     INSERT INTO artist (artist_id, name, location, latitude, longitude)
@@ -172,7 +172,7 @@ artist_table_insert = ("""
         ss.artist_latitude AS latitude
         ss.artist_longitude AS longitude
     FROM staging_songs ss;
-"""))
+""")
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
