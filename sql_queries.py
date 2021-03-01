@@ -53,7 +53,7 @@ staging_songs_table_create = ("""
 
 songplay_table_create = (""" 
     create table if not exists songplay (songplay_id BIGINT IDENTITY(0,1) PRIMARY KEY, \
-                                         start_time BIGINT NOT NULL, \
+                                         start_time TIMESTAMP NOT NULL, \
                                          user_id VARCHAR, \
                                          level VARCHAR, \
                                          song_id VARCHAR, \
@@ -87,7 +87,7 @@ artist_table_create = ("""
 """)
 
 time_table_create = ("""
-    create table if not exists time (start_time BIGINT PRIMARY KEY, \
+    create table if not exists time (start_time TIMESTAMP PRIMARY KEY, \
                                      hour INTEGER NOT NULL, \
                                      day INTEGER NOT NULL, \
                                      week INTEGER NOT NULL, \
@@ -128,7 +128,7 @@ staging_songs_copy = ("""
 songplay_table_insert = ("""
     INSERT INTO songplay (start_time, user_id, level, \
                           song_id, artist_id, session_id, location, user_agent)
-    SELECT DISTINCT timestamp 'epoch' + CAST(staging_events.ts AS BIGINT)/1000 * interval '1 second' as start_time, \
+    SELECT DISTINCT timestamp 'epoch' + CAST(staging_events.ts AS TIMESTAMP)/1000 * interval '1 second' as start_time, \
            staging_events.ts AS start_time, \
            staging_events.userid AS user_id, \
            staging_events.level, \
@@ -180,7 +180,7 @@ artist_table_insert = ("""
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second' as start_time,
+    SELECT DISTINCT timestamp 'epoch' + CAST(se.ts AS TIMESTAMP)/1000 * interval '1 second' as start_time,
     extract(HOUR FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as hour,
     extract(DAY FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as day,
     extract(WEEK FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as week,
