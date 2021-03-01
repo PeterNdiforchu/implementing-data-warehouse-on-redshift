@@ -33,7 +33,7 @@ staging_events_table_create= ("""
                                                sessionid INTEGER, \
                                                song VARCHAR, \
                                                status VARCHAR, \
-                                               ts TIMESTAMP, \
+                                               ts BIGINT, \
                                                userAgent VARCHAR, \
                                                userid VARCHAR);
 """)
@@ -121,14 +121,14 @@ staging_songs_copy = ("""
 """).format(
     config['S3']['SONG_DATA'], 
     config['IAM_ROLE']['ARN'])
-  
-               
+
+ 
 # FINAL TABLES
 
 songplay_table_insert = ("""
     INSERT INTO songplay (songplay_id, start_time, user_id, level, \
                           song_id, artist_id, session_id, location, user_agent)
-    SELECT DISTINCT TIMESTAMP 'epoch' + (events.ts / 1000) * INTERVAL '1 second' as start_time, \
+    SELECT DISTINCT TIMESTAMP 'epoch' + (staging_events.ts / 1000) * INTERVAL '1 second' as start_time, \
            staging_events.ts AS start_time, \
            staging_events.userid AS user_id, \
            staging_events.level, \
@@ -139,9 +139,9 @@ songplay_table_insert = ("""
            staging_events.userAgent as user_agent
     FROM staging_events
     JOIN staging_songs ON (staging_events.song = staging_songs.title)
-    JOIN staging_songs ON (staging_events.artist = staging_songs.artist_name)
-    JOIN staging_songs ON (staging_events.length = staging_songs.duration)
-    WHERE staging_events.page = 'NextSong';
+    WHERE staging_events.artist = staging_songs.artist_name
+    AND staging_events.length = staging_songs.duration
+    AND staging_events.page = 'NextSong';
 """)
     
 users_table_insert = ("""
@@ -153,7 +153,7 @@ users_table_insert = ("""
             staging_events.level
     FROM staging_events 
     WHERE staging_events.page = 'NextSong'
-    WHERE userid NOT IN (SELECT DISTINCT userid FROM users);                    
+    AND userid NOT IN (SELECT DISTINCT userid FROM users);                    
 """)
 
 song_table_insert = ("""
@@ -185,10 +185,11 @@ time_table_insert = ("""
            EXTRACT(hour FROM start_time) AS hour, \
            EXTRACT(day FROM start_time) AS day, \
            EXTRACT(week FROM start_time) AS week, \
-           EXTRACT(month FROM start)
-    FROM   'epoch'::date + (events.ts / 1000) * interval '1 second' AS start_time
+           EXTRACT(month FROM start_time)
+    FROM   'epoch'::date + (staging_events.ts / 1000) * interval '1 second' AS start_time
     FROM staging_events;
 """)
+
 
 # QUERY LISTS
 
