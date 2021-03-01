@@ -129,28 +129,28 @@ songplay_table_insert = ("""
     INSERT INTO songplay (songplay_id, start_time, user_id, level, \
                           song_id, artist_id, session_id, location, user_agent)
     SELECT DISTINCT TIMESTAMP 'epoch' + (events.ts / 1000) * INTERVAL '1 second' as start_time, \
-           ts AS start_time, \
-           userid AS user_id, \
-           level, \
-           song_id, \
-           artist_id, \
-           sessionid AS session_id, \
-           location, \
-           userAgent as user_agent
+           staging_events.ts AS start_time, \
+           staging_events.userid AS user_id, \
+           staging_events.level, \
+           staging_songs.song_id, \
+           staging_songs.artist_id, \
+           staging_events.sessionid AS session_id, \
+           staging_events.location, \
+           staging_events.userAgent as user_agent
     FROM staging_events
-    JOIN song ON (staging_events.song = staging_songs.title)
-    JOIN artist ON (staging_events.artist = staging_songs.artist_name)
-    JOIN length ON (staging_events.length = staging_songs.duration)
+    JOIN staging_songs ON (staging_events.song = staging_songs.title)
+    JOIN staging_songs ON (staging_events.artist = staging_songs.artist_name)
+    JOIN staging_songs ON (staging_events.length = staging_songs.duration)
     WHERE staging_events.page = 'NextSong';
 """)
     
 users_table_insert = ("""
     INSERT INTO users (first_name, last_name, gender, level)
     SELECT DISTINCT
-            firstName AS first_name, \
-            lastName AS last_name, \
-            gender, \
-            level
+            staging_events.firstName AS first_name, \
+            staging_events.lastName AS last_name, \
+            staging_events.gender, \
+            staging_events.level
     FROM staging_events 
     WHERE staging_events.page = 'NextSong'
     WHERE userid NOT IN (SELECT DISTINCT userid FROM users);                    
@@ -159,28 +159,28 @@ users_table_insert = ("""
 song_table_insert = ("""
     INSERT INTO song (song_id, title, artist_id, year, duration)
     SELECT DISTINCT
-        song_id, \
-        title, \
-        artist_id, \
-        year, \
-        duration
+        staging_songs.song_id, \
+        staging_songs.title, \
+        staging_songs.artist_id, \
+        staging_songs.year, \
+        staging_songs.duration
     FROM staging_songs;   
 """)
     
 artist_table_insert = ("""
     INSERT INTO artist (artist_id, name, location, latitude, longitude)
     SELECT DISTINCT
-        artist_id, \
-        artist_name AS name, \
-        artist_location AS location, \
-        artist_latitude AS latitude
-        artist_longitude AS longitude
+        staging_songs.artist_id, \
+        staging_songs.artist_name AS name, \
+        staging_songs.artist_location AS location, \
+        staging_songs.artist_latitude AS latitude
+        staging_songs.artist_longitude AS longitude
     FROM staging_songs;
 """)
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT ts, \
+    SELECT DISTINCT staging_events.ts, \
            start_time, \
            EXTRACT(hour FROM start_time) AS hour, \
            EXTRACT(day FROM start_time) AS day, \
