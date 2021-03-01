@@ -126,9 +126,9 @@ staging_songs_copy = ("""
 # FINAL TABLES
 
 songplay_table_insert = ("""
-    INSERT INTO songplay (songplay_id, start_time, user_id, level, \
+    INSERT INTO songplay (start_time, user_id, level, \
                           song_id, artist_id, session_id, location, user_agent)
-    SELECT DISTINCT TIMESTAMP 'epoch' + (staging_events.ts / 1000) * INTERVAL '1 second' as start_time, \
+    SELECT DISTINCT timestamp 'epoch' + CAST(staging_events.ts AS BIGINT)/1000 * interval '1 second' as start_time, \
            staging_events.ts AS start_time, \
            staging_events.userid AS user_id, \
            staging_events.level, \
@@ -180,14 +180,14 @@ artist_table_insert = ("""
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT staging_events.ts, \
-           start_time, \
-           EXTRACT(hour FROM start_time) AS hour, \
-           EXTRACT(day FROM start_time) AS day, \
-           EXTRACT(week FROM start_time) AS week, \
-           EXTRACT(month FROM start_time)
-    FROM   'epoch'::date + (staging_events.ts / 1000) * interval '1 second' AS start_time
-    FROM staging_events;
+    SELECT DISTINCT timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second' as start_time,
+    extract(HOUR FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as hour,
+    extract(DAY FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as day,
+    extract(WEEK FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as week,
+    extract(MONTH FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as month,
+    extract(YEAR FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as year,
+    extract(DAY FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as weekday
+    FROM staging_events se
 """)
 
 
