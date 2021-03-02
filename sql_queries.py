@@ -35,7 +35,7 @@ staging_events_table_create= ("""
                                                status VARCHAR, \
                                                ts BIGINT, \
                                                userAgent VARCHAR, \
-                                               userid VARCHAR);
+                                               userId VARCHAR);
 """)
 
 staging_songs_table_create = ("""
@@ -54,21 +54,21 @@ staging_songs_table_create = ("""
 songplay_table_create = (""" 
     create table if not exists songplay (songplay_id BIGINT IDENTITY(0,1) PRIMARY KEY, \
                                          start_time TIMESTAMP NOT NULL, \
-                                         user_id VARCHAR, \
-                                         level VARCHAR, \
-                                         song_id VARCHAR, \
-                                         artist_id VARCHAR, \
-                                         session_id INTEGER, \
-                                         location VARCHAR, \
-                                         user_agent VARCHAR);
+                                         user_id VARCHAR NOT NULL, \
+                                         level VARCHAR NOT NULL, \
+                                         song_id VARCHAR NOT NULL, \
+                                         artist_id VARCHAR NOT NULL, \
+                                         session_id INTEGER NOT NULL, \
+                                         location VARCHAR NOT NULL, \
+                                         user_agent VARCHAR NOT NULL);
  """)
 
 users_table_create = ("""
-    create table if not exists users (user_id VARCHAR PRIMARY KEY, \
-                                     first_name VARCHAR, \
-                                     last_name VARCHAR, \
-                                     gender VARCHAR, \
-                                     level VARCHAR);
+    create table if not exists users (user_id VARCHAR NOT NULL PRIMARY KEY, \
+                                     first_name VARCHAR NOT NULL, \
+                                     last_name VARCHAR NOT NULL, \
+                                     gender VARCHAR NOT NULL, \
+                                     level VARCHAR NOT NULL);
 """)
 
 song_table_create = ("""
@@ -126,71 +126,64 @@ staging_songs_copy = ("""
 # FINAL TABLES
 
 songplay_table_insert = ("""
-    INSERT INTO songplay (start_time, user_id, level, \
-                          song_id, artist_id, session_id, location, user_agent)
+    INSERT INTO songplay (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) 
     SELECT
-           staging_events.start_time,
-           staging_events.userid AS user_id, \
-           staging_events.level, \
-           staging_songs.song_id, \
-           staging_songs.artist_id, \
-           staging_events.sessionid AS session_id, \
-           staging_events.location, \
-           staging_events.userAgent as user_agent
-    FROM (SELECT TIMESTAMP 'epoch' + staging_events.ts/1000 * interval '1 second' AS start_time, *
-         FROM staging_events
-         WHERE page='NextSong')
-    LEFT JOIN staging_songs
-    ON staging_events.song = staging_songs.title
-    AND staging_events.artist = staging_songs.artist_name
-    AND staging_events.length = staging_songs.duration
+        TIMESTAMP 'epoch' + (se.ts / 1000) * INTERVAL '1 second' AS start_time,
+        se.userId,
+        se.level,
+        ss.song_id,
+        ss.artist_id,
+        se.sessionid AS session_id,
+        se.location,
+        se.userAgent AS user_agent
+    FROM staging_events se
+    JOIN staging_songs se ON se.artist = ss.artist_name AND ss.title = se.song 
+    WHERE se.page = 'NextSong';
 """)
     
 users_table_insert = ("""
     INSERT INTO users (first_name, last_name, gender, level)
     SELECT DISTINCT
-            staging_events.firstName AS first_name, \
-            staging_events.lastName AS last_name, \
-            staging_events.gender, \
-            staging_events.level
-    FROM staging_events 
-    WHERE staging_events.page = 'NextSong'
-    AND userid NOT IN (SELECT DISTINCT userid FROM users);                    
+        se.firstName AS first_name,
+        se.lastName AS last_name,
+        se.gender,
+        se.level
+    FROM staging_events se
+    WHERE se.page = 'NextSong' AND users.user_id IS NOT NULL;                    
 """)
 
 song_table_insert = ("""
     INSERT INTO song (song_id, title, artist_id, year, duration)
     SELECT DISTINCT
-        staging_songs.song_id, \
-        staging_songs.title, \
-        staging_songs.artist_id, \
-        staging_songs.year, \
-        staging_songs.duration
-    FROM staging_songs;   
+        ss.song_id,
+        ss.title,
+        ss.artist_id,
+        ss.year,
+        ss.duration
+    FROM staging_songs ss;   
 """)
     
 artist_table_insert = ("""
     INSERT INTO artist (artist_id, name, location, latitude, longitude)
     SELECT DISTINCT
-        staging_songs.artist_id, \
-        staging_songs.artist_name AS name, \
-        staging_songs.artist_location AS location, \
-        staging_songs.artist_latitude AS latitude
-        staging_songs.artist_longitude AS longitude
-    FROM staging_songs;
+        ss.artist_id, \
+        ss.artist_name AS name, \
+        ss.artist_location AS location, \
+        ss.artist_latitude AS latitude
+        ss.artist_longitude AS longitude
+    FROM staging_songs ss;
 """)
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT start_time,
-                EXTRACT(HOUR FROM start_time) As hour,
-                EXTRACT(DAY FROM start_time) As day,
-                EXTRACT(WEEK FROM start_time) As week,
-                EXTRACT(MONTH FROM start_time) As month,
-                EXTRACT(YEAR FROM start_time) As year,
-                EXTRACT(DOW FROM start_time) As weekday
-    FROM (SELECT distinct staging_events.ts,'1970-01-01'::date + staging_events.ts/1000 * interval '1 second' AS start_time
-    FROM staging_events)
+    SELECT DISTINCT TIMESTAMP 'epoch' + (se.ts / 1000) * INTERVAL '1 second' AS start_time,
+        EXTRACT(HOUR FROM start_time) AS hour,
+        EXTRACT(DAY FROM start_time) AS day,
+        EXTRACT(WEEK FROM start_time) AS week,
+        EXTRACT(MONTH FROM start_time) AS month,
+        EXTRACT(YEAR FROM start_time) AS year,
+        EXTRACT(DOW FROM start_time) AS weekday
+    FROM staging_events se
 """)
 
 
