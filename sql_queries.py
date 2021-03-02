@@ -128,8 +128,8 @@ staging_songs_copy = ("""
 songplay_table_insert = ("""
     INSERT INTO songplay (start_time, user_id, level, \
                           song_id, artist_id, session_id, location, user_agent)
-    SELECT DISTINCT timestamp 'epoch' + CAST(staging_events.ts AS TIMESTAMP)/1000 * interval '1 second' as start_time, \
-           staging_events.ts AS start_time, \
+    SELECT
+           staging_events.start_time,
            staging_events.userid AS user_id, \
            staging_events.level, \
            staging_songs.song_id, \
@@ -137,11 +137,13 @@ songplay_table_insert = ("""
            staging_events.sessionid AS session_id, \
            staging_events.location, \
            staging_events.userAgent as user_agent
-    FROM staging_events
-    JOIN staging_songs ON (staging_events.song = staging_songs.title)
-    WHERE staging_events.artist = staging_songs.artist_name
+    FROM (SELECT TIMESTAMP 'epoch' + staging_events.ts/1000 * interval '1 second' AS start_time, *
+         FROM staging_events
+         WHERE page='NextSong')
+    LEFT JOIN staging_songs
+    ON staging_events.song = staging_songs.title
+    AND staging_events.artist = staging_songs.artist_name
     AND staging_events.length = staging_songs.duration
-    AND staging_events.page = 'NextSong';
 """)
     
 users_table_insert = ("""
@@ -180,14 +182,15 @@ artist_table_insert = ("""
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT timestamp 'epoch' + CAST(se.ts AS TIMESTAMP)/1000 * interval '1 second' as start_time,
-    extract(HOUR FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as hour,
-    extract(DAY FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as day,
-    extract(WEEK FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as week,
-    extract(MONTH FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as month,
-    extract(YEAR FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as year,
-    extract(DAY FROM timestamp 'epoch' + CAST(se.ts AS BIGINT)/1000 * interval '1 second') as weekday
-    FROM staging_events se
+    SELECT DISTINCT start_time,
+                EXTRACT(HOUR FROM start_time) As hour,
+                EXTRACT(DAY FROM start_time) As day,
+                EXTRACT(WEEK FROM start_time) As week,
+                EXTRACT(MONTH FROM start_time) As month,
+                EXTRACT(YEAR FROM start_time) As year,
+                EXTRACT(DOW FROM start_time) As weekday
+    FROM (SELECT distinct staging_events.ts,'1970-01-01'::date + staging_events.ts/1000 * interval '1 second' AS start_time
+    FROM staging_events)
 """)
 
 
