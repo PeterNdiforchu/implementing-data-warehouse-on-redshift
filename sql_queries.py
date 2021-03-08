@@ -56,7 +56,7 @@ songplay_table_create = ("""
                                          start_time TIMESTAMP NOT NULL, \
                                          user_id VARCHAR NOT NULL, \
                                          level VARCHAR NOT NULL, \
-                                         song_id VARCHAR NOT NULL, \
+                                         song_id VARCHAR, \
                                          artist_id VARCHAR NOT NULL, \
                                          session_id INTEGER NOT NULL, \
                                          location VARCHAR NOT NULL, \
@@ -72,14 +72,15 @@ users_table_create = ("""
 """)
 
 song_table_create = ("""
-    create table if not exists song (song_id VARCHAR PRIMARY KEY, \
+    create table if not exists song (song_id VARCHAR NOT NULL PRIMARY KEY, \
                                      title VARCHAR NOT NULL, \
                                      artist_id VARCHAR NOT NULL, \
-                                     year VARCHAR NOT NULL);
+                                     year VARCHAR NOT NULL,
+                                     duration VARCHAR NOT NULL);
 """)
 
 artist_table_create = ("""
-    create table if not exists artist (artist_id VARCHAR PRIMARY KEY, \
+    create table if not exists artist (artist_id VARCHAR NOT NULL PRIMARY KEY, \
                                        name VARCHAR NOT NULL, \
                                        location VARCHAR NOT NULL, \
                                        latitude FLOAT NOT NULL, \
@@ -115,6 +116,7 @@ staging_songs_copy = ("""
     credentials 'aws_iam_role={}'
     json 'auto' truncatecolumns
     BLANKSASNULL
+    EMPTYASNULL
     compupdate off
     region 'us-west-2'
     ACCEPTINVCHARS;
@@ -129,7 +131,7 @@ songplay_table_insert = ("""
     INSERT INTO songplay (start_time, user_id, level, song_id, artist_id, session_id, location, user_agent) 
     SELECT
         TIMESTAMP 'epoch' + (se.ts / 1000) * INTERVAL '1 second' AS start_time,
-        se.userId,
+        se.userId AS user_id,
         se.level,
         ss.song_id,
         ss.artist_id,
@@ -137,19 +139,20 @@ songplay_table_insert = ("""
         se.location,
         se.userAgent AS user_agent
     FROM staging_events se
-    JOIN staging_songs se ON se.artist = ss.artist_name AND ss.title = se.song 
-    WHERE se.page = 'NextSong';
+    LEFT JOIN staging_songs ss ON se.artist = ss.artist_name AND ss.title = se.song 
+    WHERE se.page = 'NextSong' AND ss.song_id IS NOT NULL AND se.userId IS NOT NULL;
 """)
     
 users_table_insert = ("""
-    INSERT INTO users (first_name, last_name, gender, level)
+    INSERT INTO users (user_id, first_name, last_name, gender, level)
     SELECT DISTINCT
+        se.userId AS user_id,
         se.firstName AS first_name,
         se.lastName AS last_name,
         se.gender,
         se.level
     FROM staging_events se
-    WHERE se.page = 'NextSong' AND users.user_id IS NOT NULL;                    
+    WHERE se.page = 'NextSong' AND se.userId IS NOT NULL;                    
 """)
 
 song_table_insert = ("""
@@ -166,12 +169,13 @@ song_table_insert = ("""
 artist_table_insert = ("""
     INSERT INTO artist (artist_id, name, location, latitude, longitude)
     SELECT DISTINCT
-        ss.artist_id, \
-        ss.artist_name AS name, \
-        ss.artist_location AS location, \
-        ss.artist_latitude AS latitude
+        ss.artist_id,
+        ss.artist_name AS name,
+        ss.artist_location AS location, 
+        ss.artist_latitude AS latitude,
         ss.artist_longitude AS longitude
-    FROM staging_songs ss;
+    FROM staging_songs ss
+    WHERE ss.artist_location IS NOT NULL AND ss.artist_latitude IS NOT NULL AND ss.artist_longitude IS NOT NULL;
 """)
 
 time_table_insert = ("""
@@ -183,7 +187,7 @@ time_table_insert = ("""
         EXTRACT(MONTH FROM start_time) AS month,
         EXTRACT(YEAR FROM start_time) AS year,
         EXTRACT(DOW FROM start_time) AS weekday
-    FROM staging_events se
+    FROM staging_events se;
 """)
 
 
