@@ -2,18 +2,21 @@ import configparser
 import psycopg2
 from sql_queries import copy_table_queries, insert_table_queries
 
+"""This function parses through the copy table queries to load staging tables"""
 
 def load_staging_tables(cur, conn):
     for query in copy_table_queries:
         cur.execute(query)
         conn.commit()
 
+"""This function parses through the insert table queries to load final tables"""
 
 def insert_tables(cur, conn):
     for query in insert_table_queries:
         cur.execute(query)
         conn.commit()
 
+"""This function executes the parameters for connecting to the redshift cluster as defined in the dwh.cfg script"""
 
 def main():
     config = configparser.ConfigParser()
