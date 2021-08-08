@@ -9,7 +9,6 @@
 * [Screenshots](#screenshots)
 * [Technologies and Libraries](#technologies-and-libraries)
 * [Project Setup](#project-setup)
-* [Quality Assurance](#quality-assurance)
 * [Contact](#contact)
 
 ## General info
@@ -25,10 +24,22 @@ Fig.2: Sample Staging_events table on redshift
 Fig.2: Sample songplay(fact table) on redshift
 ![songplay tabe s redshift](https://user-images.githubusercontent.com/76578061/128617679-e096f353-c14c-46cd-b0bf-3f1da2cf798d.png)
 
-
 ## Technologies and Libraries
 * jupyterlap - version 1.0.9
 * psycopg2
 
 ## Project Setup
-In this section we'll discuss the different project steps which include: **Create Table Schema and **Build ETL Pipeline
+In this section we'll discuss the different project steps which include: **Create Table Schema** and **Build ETL Pipeline**
+
+### Create Table Schema
+This step involves designing the schema for the fact and dimension tables for the data model. There are 3 main python scripts in this step that are worth exploring in detail: `create_table.py`, `sql_queries.py` and `dwh.cfg`.
+
+1. `create_table.py` is a python script that creates the fact and dimensional tables for the star schema in redshift.
+2. `sql_queries.py` contains the SQL statements that are to imported into both the `create_table.py` and `sql_queries.py`.
+3. `dwh.cfg` contains the configuration for the redshift data warehouse with IAM credentials and connection details.
+
+### Build ETL Pipeline
+This step involves implements the the python script in the previous step inorder to extract the data from S3 and ingest into a staging table in the redshift data warehouse where they are later loaded into fact and dimensional tables for analysis. The python script that is responsible for this process is `etl.py`.
+
+## Contact
+Created by @peterndiforchu - feel free to contact me!
