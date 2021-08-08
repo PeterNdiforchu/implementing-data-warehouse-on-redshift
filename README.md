@@ -22,9 +22,13 @@ Fig.1: Sample Staging_songs table on redshift
 Fig.2: Sample Staging_events table on redshift
 ![staging_events_table_se_redshift](https://user-images.githubusercontent.com/76578061/110278709-fd826280-7f94-11eb-8f21-414ebe2dd504.png)
 
+Fig.2: Sample songplay(fact table) on redshift
+![songplay tabe s redshift](https://user-images.githubusercontent.com/76578061/128617679-e096f353-c14c-46cd-b0bf-3f1da2cf798d.png)
+
+
 ## Technologies and Libraries
 * jupyterlap - version 1.0.9
 * psycopg2
 
 ## Project Setup
-
+In this section we'll discuss the different project steps which include: **Create Table Schema and **Build ETL Pipeline
