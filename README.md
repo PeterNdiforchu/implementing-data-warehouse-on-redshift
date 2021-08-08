@@ -27,6 +27,7 @@ Fig.2: Sample songplay(fact table) on redshift
 ## Technologies and Libraries
 * jupyterlap - version 1.0.9
 * psycopg2
+* configparser
 
 ## Project Setup
 In this section we'll discuss the different project steps which include: **Create Table Schema** and **Build ETL Pipeline**
