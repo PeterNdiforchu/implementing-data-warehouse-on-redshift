@@ -139,7 +139,7 @@ songplay_table_insert = ("""
         se.location,
         se.userAgent AS user_agent
     FROM staging_events se
-    LEFT JOIN staging_songs ss ON se.artist = ss.artist_name AND ss.title = se.song 
+    LEFT JOIN staging_songs ss ON se.artist = ss.artist_name AND ss.title = se.song AND ss.duration = se.ts
     WHERE se.page = 'NextSong' AND ss.song_id IS NOT NULL AND se.userId IS NOT NULL;
 """)
     
@@ -180,7 +180,7 @@ artist_table_insert = ("""
 
 time_table_insert = ("""
     INSERT INTO time (start_time, hour, day, week, month, year, weekday)
-    SELECT DISTINCT TIMESTAMP 'epoch' + (se.ts / 1000) * INTERVAL '1 second' AS start_time,
+    SELECT DISTINCT start_time,
         EXTRACT(HOUR FROM start_time) AS hour,
         EXTRACT(DAY FROM start_time) AS day,
         EXTRACT(WEEK FROM start_time) AS week,
