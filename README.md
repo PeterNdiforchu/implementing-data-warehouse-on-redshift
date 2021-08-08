@@ -43,4 +43,4 @@ This step involves designing the schema for the fact and dimension tables for th
 This step involves implements the the python script in the previous step inorder to extract the data from S3 and ingest into a staging table in the redshift data warehouse where they are later loaded into fact and dimensional tables for analysis. The python script that is responsible for this process is `etl.py`.
 
 ## Contact
-Created by @peterndiforchu - feel free to contact me!
+Created by @[peterndiforchu](https://www.linkedin.com/in/peter-ndiforchu-0b8986129) - feel free to contact me!
