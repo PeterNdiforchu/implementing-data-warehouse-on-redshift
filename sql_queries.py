@@ -190,7 +190,6 @@ time_table_insert = ("""
     FROM songplay;
 """)
 
-
 # QUERY LISTS
 
 create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, users_table_create, song_table_create, artist_table_create, time_table_create]
