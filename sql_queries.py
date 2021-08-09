@@ -187,7 +187,7 @@ time_table_insert = ("""
         EXTRACT(MONTH FROM start_time) AS month,
         EXTRACT(YEAR FROM start_time) AS year,
         EXTRACT(DOW FROM start_time) AS weekday
-    FROM staging_events se;
+    FROM songplay;
 """)
 
 
